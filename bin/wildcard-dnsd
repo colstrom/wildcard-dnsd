@@ -1,0 +1,41 @@
+#! /usr/bin/env ruby
+# coding: utf-8
+# -*- ruby -*-
+
+require "rubydns"   # SPDX-License-Identifier: MIT
+
+FRONTEND_HOST = ENV.fetch("FRONTEND_HOST") { "0.0.0.0" }
+FRONTEND_PORT = ENV.fetch("FRONTEND_PORT") { 53        }.to_i
+FRONTENDS = [
+  [:udp, FRONTEND_HOST, FRONTEND_PORT]
+]
+
+Resolv.getname("1.1.1.1")
+SYSTEM_DEFAULT_RESOLVERS = Resolv::DefaultResolver
+                             .instance_variable_get(:@resolvers)
+                             .select { |resolver| Resolv::DNS === resolver }
+                             .map(&:make_udp_requester)
+                             .map do |resolver|
+  [
+    :udp,
+    resolver.instance_variable_get(:@host),
+    resolver.instance_variable_get(:@port),
+  ]
+end
+
+BACKENDS = RubyDNS::Resolver.new(SYSTEM_DEFAULT_RESOLVERS)
+
+IPV4_PATTERN = "(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.-]){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+
+ARGV.push(Socket.gethostname) if ARGV.empty?
+
+RubyDNS.run_server(FRONTENDS) do
+  ARGV.each do |domain|
+    match(/^(?<prefix>.+[.-])?(?<ipv4>#{IPV4_PATTERN})[.]#{Regexp.escape(domain)}$/, Resolv::DNS::Resource::IN::A) do |transaction, match_data|
+      transaction.respond!(match_data[:ipv4].tr("-", "."))
+    end
+  end
+  otherwise do |transaction|
+    transaction.passthrough!(BACKENDS)
+  end
+end
