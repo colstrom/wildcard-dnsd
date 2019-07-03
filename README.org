@@ -1,0 +1,37 @@
+#+TITLE: Wildcard DNSd
+#+LATEX: \pagebreak
+
+* Overview
+
+  ~wildcard-dnsd~ is a simple, standalone wildcard DNS service. It is very
+  similar to [[https://nip.io][nip.io]], but is written in Ruby rather than Python, and does not
+  require the deployment and configuration of PowerDNS.
+
+* Why does this exist?
+
+  Because sometimes you want a self-hosted alternative to nip.io, without the
+  hassle, for reliability, network isolation, or other reasons.
+
+* Installation
+
+  =gem install wildcard-dnsd=
+
+* Usage
+
+  =wildcard-dnsd [domain ...]=
+
+* Configuration
+
+  ~wildcard-dnsd~ requires very little (if any) configuration. Assuming it has
+  sufficient privileges to bind a privileged port (53), the default behaviour is
+  to bind to all interfaces and listen on UDP/53.
+
+  It uses the default DNS resolvers for your system, detected at startup.
+
+  If you prefer to bind to a specific interface, set =FRONTEND_HOST= in the
+  environment. If you need to bind to a different port, set =FRONTEND_PORT=.
+
+* License
+
+  ~wildcard-dnsd~ is available under the [[https://tldrlegal.com/license/mit-license][MIT License]]. See =LICENSE.txt= for the
+  full text.
